@@ -1,0 +1,161 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id        String       @id @default(uuid())
+  name      String
+  subdomain String       @unique
+  plan      TenantPlan   @default(free)
+  status    TenantStatus @default(active)
+
+  // --- add these ---
+  contactEmail   String   @map("contact_email")   // billing/support contact, separate from any user's login email
+  contactPhone   String?  @map("contact_phone")
+  timezone       String   @default("UTC")          // critical for a travel app — travel dates, follow-up reminders, reports all need a tenant timezone
+  currency       String   @default("USD")          // travel agencies quote/invoice in different currencies
+  locale         String   @default("en")           // for future i18n
+
+  trialEndsAt    DateTime? @map("trial_ends_at")   // if you offer free trials
+  onboardedAt    DateTime? @map("onboarded_at")    // when they completed setup — useful for activation funnel analytics
+
+  logoUrl        String?  @map("logo_url")         // white-labeling — travel agencies care about branding on customer-facing quotes/emails
+  billingCustomerId String? @map("billing_customer_id") // Stripe/Paddle customer ID, once you add billing
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  users          User[]
+  leads          Lead[]
+  leadActivities LeadActivity[]
+
+  @@map("tenants")
+}
+
+enum TenantPlan {
+  free
+  starter
+  pro
+  enterprise
+}
+
+enum TenantStatus {
+  active
+  suspended
+  cancelled
+}
+
+enum UserRole {
+  owner
+  admin
+  agent
+}
+
+model User {
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  email        String
+  passwordHash String   @map("password_hash")
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  role         UserRole @default(agent)
+  isActive     Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  assignedLeads  Lead[]         @relation("LeadAssignee")
+  leadActivities LeadActivity[]
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+enum LeadStatus {
+  new
+  contacted
+  qualified
+  proposal_sent
+  won
+  lost
+}
+
+enum LeadSource {
+  website
+  referral
+  social_media
+  phone
+  email
+  walk_in
+  other
+}
+
+model Lead {
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  fullName String  @map("full_name")
+  email    String?
+  phone    String?
+
+  status LeadStatus @default(new)
+  source LeadSource @default(other)
+
+  destination String?
+  travelDate  DateTime? @map("travel_date")
+  notes       String?
+
+  assignedToId String? @map("assigned_to_id")
+  assignedTo   User?   @relation("LeadAssignee", fields: [assignedToId], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  activities LeadActivity[]
+
+  @@map("leads")
+}
+
+enum LeadActivityType {
+  note
+  call
+  email
+  meeting
+  status_change
+}
+
+model LeadActivity {
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  leadId String @map("lead_id")
+  lead   Lead   @relation(fields: [leadId], references: [id])
+
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id])
+
+  type    LeadActivityType
+  message String
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("lead_activities")
+}
