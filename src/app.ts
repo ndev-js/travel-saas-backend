@@ -1,10 +1,13 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
 import { isDatabaseHealthy } from './lib/prisma';
 import { config } from '@/config';
+import { notFoundHandler } from '@/middlewares/not-found';
+import { errorHandler } from '@/middlewares/error-handler';
+import { platformAuthRouter } from '@/modules/platform/auth/auth.routes';
 
 export const app = express();
 
@@ -38,22 +41,16 @@ app.get('/health/ready', async (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', database: 'connected' });
 });
 
-// --- Routes will be mounted here as the app grows ---
-// e.g. app.use('/api/v1/leads', leadsRouter);
+// --- Routes ---
+app.use('/api/v1/platform/auth', platformAuthRouter);
 
 // --- 404 handler ---
-app.use((_req: Request, res: Response) => {
-  res.status(404).json({ error: 'Not found' });
-});
+// Must come after all routes: anything unmatched falls through to here.
+app.use(notFoundHandler);
 
 // --- Centralized error handler ---
-// Keeping this here, even minimal, matters early: without it, any thrown
-// error in an async route handler crashes the process instead of returning
-// a clean 500. As routes grow, this is where you'll map custom error classes
-// (e.g. NotFoundError, ValidationError) to proper status codes.
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err);
-  res.status(500).json({
-    error: config.isDev ? err.message : 'Internal server error',
-  });
-});
+// Must be the last app.use(). Express 5 forwards rejected promises from
+// async handlers here automatically. Maps AppError/Zod/Prisma/JWT errors
+// (and anything else) to the same { success, error: { code, message } }
+// envelope used across the API.
+app.use(errorHandler);
