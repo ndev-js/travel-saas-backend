@@ -8,6 +8,8 @@ import { config } from '@/config';
 import { notFoundHandler } from '@/middlewares/not-found';
 import { errorHandler } from '@/middlewares/error-handler';
 import { platformAuthRouter } from '@/modules/platform/auth/auth.routes';
+import { tenantRoutes } from '@/modules/platform/tenants/tenants.routes';
+import { tenantUserRoutes } from './modules/platform/users/users.routes';
 
 export const app = express();
 
@@ -43,6 +45,8 @@ app.get('/health/ready', async (_req: Request, res: Response) => {
 
 // --- Routes ---
 app.use('/api/v1/platform/auth', platformAuthRouter);
+app.use('/api/v1', tenantRoutes);
+app.use('/api/v1', tenantUserRoutes);
 
 // --- 404 handler ---
 // Must come after all routes: anything unmatched falls through to here.

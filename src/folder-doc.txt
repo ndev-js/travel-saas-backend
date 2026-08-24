@@ -1,0 +1,177 @@
+travel-saas-backend/
+
+├── prisma/
+
+│   ├── schema.prisma
+
+│   ├── migrations/
+
+│   └── seed.ts
+
+├── src/
+
+│   ├── config/
+
+│   │   ├── env.ts                 # validated env vars (zod)
+
+│   │   ├── database.ts            # Prisma client instance
+
+│   │   └── constants.ts
+
+│   │
+
+│   ├── modules/                   # feature-based, not layer-based
+
+│   │   ├── platform-admin/
+
+│   │   │   ├── auth/
+
+│   │   │   │   ├── auth.controller.ts
+
+│   │   │   │   ├── auth.service.ts
+
+│   │   │   │   ├── auth.routes.ts
+
+│   │   │   │   └── auth.validation.ts   # zod schemas
+
+│   │   │   ├── tenants/
+
+│   │   │   │   ├── tenants.controller.ts
+
+│   │   │   │   ├── tenants.service.ts
+
+│   │   │   │   ├── tenants.repository.ts
+
+│   │   │   │   ├── tenants.routes.ts
+
+│   │   │   │   └── tenants.validation.ts
+
+│   │   │   ├── admins/
+
+│   │   │   ├── billing/
+
+│   │   │   ├── analytics/
+
+│   │   │   └── audit-logs/
+
+│   │   │
+
+│   │   ├── tenant/                # everything scoped to a tenant
+
+│   │   │   ├── auth/
+
+│   │   │   ├── users/
+
+│   │   │   ├── bookings/
+
+│   │   │   ├── customers/
+
+│   │   │   ├── packages/          # travel packages/itineraries
+
+│   │   │   ├── payments/
+
+│   │   │   └── settings/
+
+│   │   │
+
+│   │   └── shared/                # cross-cutting domain logic
+
+│   │       ├── notifications/
+
+│   │       └── uploads/
+
+│   │
+
+│   ├── middleware/
+
+│   │   ├── auth/
+
+│   │   │   ├── requirePlatformAdmin.ts
+
+│   │   │   ├── requireTenantUser.ts
+
+│   │   │   └── verifyJwt.ts
+
+│   │   ├── tenant-context.ts       # resolves tenantId, sets RLS session var
+
+│   │   ├── error-handler.ts
+
+│   │   ├── rate-limiter.ts
+
+│   │   ├── validate-request.ts     # generic zod middleware wrapper
+
+│   │   └── audit-logger.ts
+
+│   │
+
+│   ├── lib/                        # thin wrappers around 3rd-party SDKs
+
+│   │   ├── stripe.ts
+
+│   │   ├── mailer.ts
+
+│   │   └── storage.ts              # S3/Cloudinary etc.
+
+│   │
+
+│   ├── utils/
+
+│   │   ├── logger.ts               # pino/winston
+
+│   │   ├── apiResponse.ts          # consistent response shape
+
+│   │   ├── apiError.ts             # custom error classes
+
+│   │   └── pagination.ts
+
+│   │
+
+│   ├── types/
+
+│   │   ├── express.d.ts            # augment Request with req.user, req.tenantId
+
+│   │   └── index.ts
+
+│   │
+
+│   ├── jobs/                       # background jobs / queues
+
+│   │   ├── queues/
+
+│   │   └── processors/
+
+│   │
+
+│   ├── routes/
+
+│   │   └── index.ts                # mounts /api/platform/*, /api/tenant/*, /api/public/*
+
+│   │
+
+│   ├── app.ts                      # express app setup (helmet, cors, morgan, routes)
+
+│   └── server.ts                   # entrypoint, http listen
+
+│
+
+├── tests/
+
+│   ├── unit/
+
+│   ├── integration/
+
+│   └── fixtures/
+
+│
+
+├── .env
+
+├── .env.example
+
+├── prisma.config.ts
+
+├── tsconfig.json
+
+├── package.json
+
+└── README.md
