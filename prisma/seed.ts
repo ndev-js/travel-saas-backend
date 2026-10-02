@@ -1,28 +1,17 @@
 import { prisma } from '../src/lib/prisma';
-import { PlatformRole } from '../src/generated/prisma/enums';
-
-import bcrypt from 'bcrypt';
+import { seedPlatformUser } from './platform-user-seed';
+import { seedTenants } from './seed-tenants';
 
 async function main() {
-  const passwordHash = await bcrypt.hash('ChangeMe123!', 10);
-
-  const superAdmin = await prisma.platformUser.upsert({
-    where: { email: 'admin@yourplatform.com' },
-    update: {},
-    create: {
-      email: 'admin@mytravelcrm.com',
-      passwordHash,
-      fullName: 'Platform Owner',
-      role: PlatformRole.SUPER_ADMIN,
-    },
-  });
-
-  console.log('Seeded platform user:', superAdmin.email);
+  console.log('Starting database seeding...');
+  // await seedPlatformUser();
+  await seedTenants();
+  console.log('Database seeding completed successfully.');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('Seeding failed:', e);
     process.exit(1);
   })
   .finally(async () => {
