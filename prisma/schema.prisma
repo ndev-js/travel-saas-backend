@@ -81,57 +81,98 @@ model User {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
+  createdLeads  Lead[] @relation("LeadCreator")
+  assignedLeads Lead[] @relation("LeadAssignee")
+
   @@unique([tenantId, email])
   @@map("users")
 }
-enum LeadType {
-  FLIGHT
-  HOTEL
-  VISA
-  TOUR
-  UMRAH
-  HAJJ
-  INSURANCE
-  PACKAGE
-  OTHER
-}
-
-// Matches the "lead via" dropdown in step 2 of the create-lead form
-enum LeadSource {
-  WALK_IN
-  REFERENCE
-  PHONE_CALL
-  WEBSITE
-  SOCIAL_MEDIA
-  ADVERTISEMENT
-  OTHER
-}
 
 enum LeadStatus {
-  NEW
-  CONTACTED
-  QUALIFIED
-  CONVERTED
-  LOST
+  new
+  contacted
+  qualified
+  proposal_sent
+  won
+  lost
 }
 
+enum LeadSource {
+  website
+  referral
+  social_media
+  phone
+  email
+  walk_in
+  other
+}
+
+// Matches the "Lead Type" dropdown of the create-lead form
+enum LeadType {
+  flight
+  hotel
+  visa
+  tour
+  umrah
+  hajj
+  insurance
+  package
+  other
+}
+
+// Matches the "Lead Handling" radio group of the create-lead form
 enum LeadHandlingMode {
-  SELF
-  ON_BEHALF
-  TRANSFERRED
+  self // Create and Takeover (Handle Myself)
+  on_behalf // Create for Others
+  transferred // Create and Transfer to Staff
 }
 
 model Lead {
-  id           String   @id @default(uuid())
-  tenantId     String   @map("tenant_id")
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
-  fullName     String   @map("full_name")
-  email        String?
-  phoneNumber String?  @map("phone_number")
-  createdAt    DateTime @default(now()) @map("created_at")
-  leadType      String?  @map("lead_type")
-  leadSource    String?  @map("lead_source")
-  customerLocation String?  @map("customer_location")
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
 
-  
+  fullName         String  @map("full_name")
+  email            String?
+  phone            String?
+  customerLocation String? @map("customer_location")
+
+  leadType LeadType   @map("lead_type")
+  source   LeadSource @default(other)
+  status   LeadStatus @default(new)
+
+  // Type-specific section of the form, keyed by leadType:
+  //   flight    { from, to, tripType, cabinClass }
+  //   hotel     { city, rating, rooms, boardBasis }
+  //   visa      { country, visaType }
+  //   tour      { destinations, needVisa, hotel, days }
+  //   umrah     { route, makkahNights, madinaNights, package }
+  //   hajj      { package, days }
+  //   insurance { country, stay, vendor?, planName? }
+  //   package   { requiredAt, serviceDetail }
+  //   other     { serviceDetail }
+  details Json @default("{}")
+
+  // Departure / check-in / travel start / service date, and the optional return / check-out / travel end
+  startDate DateTime? @map("start_date") @db.Date
+  endDate   DateTime? @map("end_date") @db.Date
+  adults    Int       @default(1)
+  children  Int       @default(0)
+  infants   Int       @default(0)
+  remarks   String?
+
+  handlingMode LeadHandlingMode @default(self) @map("handling_mode")
+  createdById  String?          @map("created_by_id")
+  createdBy    User?            @relation("LeadCreator", fields: [createdById], references: [id])
+  assignedToId String?          @map("assigned_to_id")
+  assignedTo   User?            @relation("LeadAssignee", fields: [assignedToId], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([tenantId, status])
+  @@index([tenantId, leadType])
+  @@index([tenantId, assignedToId])
+  @@map("leads")
 }

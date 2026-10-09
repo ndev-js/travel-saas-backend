@@ -10,6 +10,7 @@ import { errorHandler } from '@/middlewares/error-handler';
 import { platformAuthRouter } from '@/modules/platform/auth/auth.routes';
 import { tenantRoutes } from '@/modules/platform/tenants/tenants.routes';
 import { tenantUserRoutes } from './modules/platform/users/users.routes';
+import { leadRoutes } from '@/modules/leads/leads.routes';
 
 export const app = express();
 
@@ -47,6 +48,7 @@ app.get('/health/ready', async (_req: Request, res: Response) => {
 app.use('/api/v1/platform/auth', platformAuthRouter);
 app.use('/api/v1', tenantRoutes);
 app.use('/api/v1', tenantUserRoutes);
+app.use('/api/v1', leadRoutes);
 
 // --- 404 handler ---
 // Must come after all routes: anything unmatched falls through to here.
